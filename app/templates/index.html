@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ShellSpace Chatroom</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🌐 ShellSpace</h1>
+    <div id="chat-box"></div>
+    <input id="msg" type="text" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>
