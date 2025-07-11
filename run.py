@@ -7,8 +7,33 @@ import webbrowser
 import urllib.request
 import platform
 import stat
+import argparse
 
-# --- Auto install required packages ---
+# === CLI Argument ===
+parser = argparse.ArgumentParser(description="ShellSpace Chatroom Launcher")
+parser.add_argument('--key', help="Set or override the Flask secret key")
+args = parser.parse_args()
+
+SECRET_FILE = "secret_key.txt"
+
+# === Secret Key Handling ===
+def get_or_set_secret():
+    if args.key:
+        with open(SECRET_FILE, "w") as f:
+            f.write(args.key)
+        print(f"✅ Secret key overridden and saved to {SECRET_FILE}")
+        return args.key
+
+    if os.path.exists(SECRET_FILE):
+        with open(SECRET_FILE, "r") as f:
+            return f.read().strip()
+
+    key = input("🔑 Enter a new Flask secret key (one-time setup): ").strip()
+    with open(SECRET_FILE, "w") as f:
+        f.write(key)
+    return key
+
+# === Install required packages ===
 required = ["flask", "flask_socketio", "eventlet"]
 for pkg in required:
     try:
@@ -18,16 +43,17 @@ for pkg in required:
 
 from app import create_app, socketio
 
-# --- Launch Flask app ---
-def run_server():
+# === Launch Flask App ===
+def run_server(secret_key):
     app = create_app()
+    app.secret_key = secret_key
     socketio.run(app, host="0.0.0.0", port=5000)
 
-# --- Download + Run Cloudflared ---
+# === Cloudflare Tunnel Setup ===
 def download_cloudflared():
     system = platform.system().lower()
-    arch = "amd64"
     url = "https://github.com/cloudflare/cloudflared/releases/latest/download/"
+    arch = "amd64"
 
     if "win" in system:
         url += "cloudflared-windows-amd64.exe"
@@ -42,7 +68,7 @@ def download_cloudflared():
         print("Unsupported OS")
         sys.exit(1)
 
-    print("📡 Downloading cloudflared...")
+    print("⬇️ Downloading cloudflared...")
     urllib.request.urlretrieve(url, filename)
     os.chmod(filename, stat.S_IRWXU)
     return filename
@@ -61,9 +87,10 @@ def run_cloudflare():
             webbrowser.open(public_url)
             break
 
-# --- Main Startup ---
+# === Main ===
 if __name__ == "__main__":
-    threading.Thread(target=run_server, daemon=True).start()
+    secret_key = get_or_set_secret()
+    threading.Thread(target=lambda: run_server(secret_key), daemon=True).start()
     time.sleep(2)
     run_cloudflare()
 
@@ -71,4 +98,4 @@ if __name__ == "__main__":
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("Exiting...")
+        print("🛑 Exiting ShellSpace.")
